@@ -167,6 +167,18 @@ private:
     int m_backId;
 };
 
+class BacksDialog : public wxDialog {
+public:
+    BacksDialog(wxWindow* parent);
+    int GetSelectedBack() const { return m_selectedBack; }
+    void SetSelectedBack(int backId);
+
+private:
+    void OnOk(wxCommandEvent& evt);
+    int m_selectedBack;
+    BackPanel* m_panels[cIDFACEDOWN];
+};
+
 wxBEGIN_EVENT_TABLE(BackPanel, wxPanel)
     EVT_PAINT(BackPanel::OnPaint)
     EVT_LEFT_DOWN(BackPanel::OnLeftDown)
@@ -187,19 +199,11 @@ void BackPanel::OnPaint(wxPaintEvent& evt)
     cdtDrawExt(&dc, 4, 4, dxCrd, dyCrd, m_backId, FACEDOWN, 0L);
 
     /* Draw highlight if this is the selected back */
-    BackPanel* sel = nullptr;
-    wxWindow* dlg = GetParent();
-    if (dlg) {
-        wxWindowList& children = dlg->GetChildren();
-        for (wxWindowList::iterator it = children.begin(); it != children.end(); ++it) {
-            BackPanel* bp = dynamic_cast<BackPanel*>(*it);
-            if (bp && bp->HasFocus()) {
-                sel = bp;
-                break;
-            }
-        }
-    }
-    if (sel == this) {
+    bool isSelected = false;
+    BacksDialog* dlg = dynamic_cast<BacksDialog*>(GetParent());
+    if (dlg)
+        isSelected = (dlg->GetSelectedBack() == m_backId);
+    if (isSelected) {
         wxPen pen(wxSystemSettings::GetColour(wxSYS_COLOUR_HIGHLIGHT), 2);
         dc.SetPen(pen);
         dc.SetBrush(*wxTRANSPARENT_BRUSH);
@@ -210,37 +214,22 @@ void BackPanel::OnPaint(wxPaintEvent& evt)
 void BackPanel::OnLeftDown(wxMouseEvent& evt)
 {
     SetFocus();
-    /* Notify parent to update selection */
-    wxWindow* dlg = GetParent();
-    if (dlg) {
-        wxWindowList& children = dlg->GetChildren();
-        for (wxWindowList::iterator it = children.begin(); it != children.end(); ++it) {
-            BackPanel* bp = dynamic_cast<BackPanel*>(*it);
-            if (bp)
-                bp->Refresh();
-        }
-    }
+    /* Update explicit selection in the dialog */
+    BacksDialog* dlg = dynamic_cast<BacksDialog*>(GetParent());
+    if (dlg)
+        dlg->SetSelectedBack(m_backId);
 }
 
 void BackPanel::OnLeftDClick(wxMouseEvent& evt)
 {
     SetFocus();
     /* Double-click selects and closes */
-    wxDialog* dlg = dynamic_cast<wxDialog*>(GetParent());
-    if (dlg)
+    BacksDialog* dlg = dynamic_cast<BacksDialog*>(GetParent());
+    if (dlg) {
+        dlg->SetSelectedBack(m_backId);
         dlg->EndModal(wxID_OK);
+    }
 }
-
-class BacksDialog : public wxDialog {
-public:
-    BacksDialog(wxWindow* parent);
-    int GetSelectedBack() const { return m_selectedBack; }
-
-private:
-    void OnOk(wxCommandEvent& evt);
-    int m_selectedBack;
-    BackPanel* m_panels[cIDFACEDOWN];
-};
 
 BacksDialog::BacksDialog(wxWindow* parent)
     : wxDialog(parent, wxID_ANY, wxT("Select Card Back"), wxDefaultPosition, wxDefaultSize,
@@ -277,15 +266,16 @@ BacksDialog::BacksDialog(wxWindow* parent)
     Bind(wxEVT_BUTTON, &BacksDialog::OnOk, this, wxID_OK);
 }
 
+void BacksDialog::SetSelectedBack(int backId)
+{
+    m_selectedBack = backId;
+    /* Refresh all panels so the highlight follows the selection */
+    for (int i = 0; i < cIDFACEDOWN; i++)
+        m_panels[i]->Refresh();
+}
+
 void BacksDialog::OnOk(wxCommandEvent& evt)
 {
-    /* Find which panel has focus */
-    for (int i = 0; i < cIDFACEDOWN; i++) {
-        if (m_panels[i]->HasFocus()) {
-            m_selectedBack = m_panels[i]->GetBackId();
-            break;
-        }
-    }
     EndModal(wxID_OK);
 }
 
