@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resource xmlns="http://www.wxwidgets.org/wxxrc" version="2.5.3.0">
+  <!-- Card faces: Clubs (1-13) -->
+  <object class="wxBitmap" name="cla">bmp/cla.bmp</object>
+  <object class="wxBitmap" name="cl2">bmp/cl2.bmp</object>
+  <object class="wxBitmap" name="cl3">bmp/cl3.bmp</object>
+  <object class="wxBitmap" name="cl4">bmp/cl4.bmp</object>
+  <object class="wxBitmap" name="cl5">bmp/cl5.bmp</object>
+  <object class="wxBitmap" name="cl6">bmp/cl6.bmp</object>
+  <object class="wxBitmap" name="cl7">bmp/cl7.bmp</object>
+  <object class="wxBitmap" name="cl8">bmp/cl8.bmp</object>
+  <object class="wxBitmap" name="cl9">bmp/cl9.bmp</object>
+  <object class="wxBitmap" name="cl10">bmp/cl10.bmp</object>
+  <object class="wxBitmap" name="clj">bmp/clj.bmp</object>
+  <object class="wxBitmap" name="clq">bmp/clq.bmp</object>
+  <object class="wxBitmap" name="clk">bmp/clk.bmp</object>
+
+  <!-- Card faces: Diamonds (14-26) -->
+  <object class="wxBitmap" name="dma">bmp/dma.bmp</object>
+  <object class="wxBitmap" name="dm2">bmp/dm2.bmp</object>
+  <object class="wxBitmap" name="dm3">bmp/dm3.bmp</object>
+  <object class="wxBitmap" name="dm4">bmp/dm4.bmp</object>
+  <object class="wxBitmap" name="dm5">bmp/dm5.bmp</object>
+  <object class="wxBitmap" name="dm6">bmp/dm6.bmp</object>
+  <object class="wxBitmap" name="dm7">bmp/dm7.bmp</object>
+  <object class="wxBitmap" name="dm8">bmp/dm8.bmp</object>
+  <object class="wxBitmap" name="dm9">bmp/dm9.bmp</object>
+  <object class="wxBitmap" name="dm10">bmp/dm10.bmp</object>
+  <object class="wxBitmap" name="dmj">bmp/dmj.bmp</object>
+  <object class="wxBitmap" name="dmq">bmp/dmq.bmp</object>
+  <object class="wxBitmap" name="dmk">bmp/dmk.bmp</object>
+
+  <!-- Card faces: Hearts (27-39) -->
+  <object class="wxBitmap" name="hta">bmp/hta.bmp</object>
+  <object class="wxBitmap" name="ht2">bmp/ht2.bmp</object>
+  <object class="wxBitmap" name="ht3">bmp/ht3.bmp</object>
+  <object class="wxBitmap" name="ht4">bmp/ht4.bmp</object>
+  <object class="wxBitmap" name="ht5">bmp/ht5.bmp</object>
+  <object class="wxBitmap" name="ht6">bmp/ht6.bmp</object>
+  <object class="wxBitmap" name="ht7">bmp/ht7.bmp</object>
+  <object class="wxBitmap" name="ht8">bmp/ht8.bmp</object>
+  <object class="wxBitmap" name="ht9">bmp/ht9.bmp</object>
+  <object class="wxBitmap" name="ht10">bmp/ht10.bmp</object>
+  <object class="wxBitmap" name="htj">bmp/htj.bmp</object>
+  <object class="wxBitmap" name="htq">bmp/htq.bmp</object>
+  <object class="wxBitmap" name="htk">bmp/htk.bmp</object>
+
+  <!-- Card faces: Spades (40-52) -->
+  <object class="wxBitmap" name="spa">bmp/spa.bmp</object>
+  <object class="wxBitmap" name="sp2">bmp/sp2.bmp</object>
+  <object class="wxBitmap" name="sp3">bmp/sp3.bmp</object>
+  <object class="wxBitmap" name="sp4">bmp/sp4.bmp</object>
+  <object class="wxBitmap" name="sp5">bmp/sp5.bmp</object>
+  <object class="wxBitmap" name="sp6">bmp/sp6.bmp</object>
+  <object class="wxBitmap" name="sp7">bmp/sp7.bmp</object>
+  <object class="wxBitmap" name="sp8">bmp/sp8.bmp</object>
+  <object class="wxBitmap" name="sp9">bmp/sp9.bmp</object>
+  <object class="wxBitmap" name="sp10">bmp/sp10.bmp</object>
+  <object class="wxBitmap" name="spj">bmp/spj.bmp</object>
+  <object class="wxBitmap" name="spq">bmp/spq.bmp</object>
+  <object class="wxBitmap" name="spk">bmp/spk.bmp</object>
+
+  <!-- Card backs (54-65) -->
+  <object class="wxBitmap" name="rbhatch">bmp/rbhatch.bmp</object>
+  <object class="wxBitmap" name="bghatch">bmp/bghatch.bmp</object>
+  <object class="wxBitmap" name="brobot">bmp/brobot.bmp</object>
+  <object class="wxBitmap" name="rose">bmp/rose.bmp</object>
+  <object class="wxBitmap" name="bkvine">bmp/bkvine.bmp</object>
+  <object class="wxBitmap" name="blvine">bmp/blvine.bmp</object>
+  <object class="wxBitmap" name="cfish">bmp/cfish.bmp</object>
+  <object class="wxBitmap" name="bfish">bmp/bfish.bmp</object>
+  <object class="wxBitmap" name="shell">bmp/shell.bmp</object>
+  <object class="wxBitmap" name="krazkstl">bmp/krazkstl.bmp</object>
+  <object class="wxBitmap" name="sanflipe">bmp/sanflipe.bmp</object>
+  <object class="wxBitmap" name="slimeup">bmp/slimeup.bmp</object>
+
+  <!-- Animation frames -->
+  <object class="wxBitmap" name="aslime1">bmp/aslime1.bmp</object>
+  <object class="wxBitmap" name="aslime2">bmp/aslime2.bmp</object>
+  <object class="wxBitmap" name="akstl1">bmp/akstl1.bmp</object>
+  <object class="wxBitmap" name="aflipe1">bmp/aflipe1.bmp</object>
+  <object class="wxBitmap" name="aflipe2">bmp/aflipe2.bmp</object>
+  <object class="wxBitmap" name="abrobot1">bmp/abrobot1.bmp</object>
+  <object class="wxBitmap" name="abrobot2">bmp/abrobot2.bmp</object>
+
+  <!-- Special cards -->
+  <object class="wxBitmap" name="ghost">bmp/ghost.bmp</object>
+  <object class="wxBitmap" name="x">bmp/x.bmp</object>
+  <object class="wxBitmap" name="o">bmp/o.bmp</object>
+</resource>

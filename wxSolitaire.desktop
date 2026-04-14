@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=wxSolitaire
+GenericName=Microsoft Solitaire
+Comment=Microsoft Solitaire
+Exec=wxSolitaire %f
+Icon=wxSolitaire
+Categories=Game;Cards;
+Keywords=Cards;Microsoft;Solitaire;
