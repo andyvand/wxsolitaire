@@ -1,0 +1,189 @@
+.\" Manpage for wxSolitaire.
+.\" Content adapted from the bundled Solitaire Help (wxsolitairechm).
+.TH WXSOLITAIRE 6 "2026-04-19" "wxSolitaire 1.0" "Games Manual"
+.SH NAME
+wxSolitaire \- classic Klondike Solitaire card game
+.SH SYNOPSIS
+.B wxSolitaire
+.SH DESCRIPTION
+.B wxSolitaire
+is a cross-platform implementation of classic Klondike Solitaire built with
+C++ and wxWidgets.
+The object of the game is to use all the cards in the deck to build up the
+four suit stacks from Ace to King.
+.PP
+The playing area has three regions:
+.TP
+.B Deck
+Located in the upper left of the playing area.
+Cards are drawn from the deck and moved to the suit and row stacks.
+Depending on the \fBDraw\fR option, one or three cards are turned over at a
+time.
+When the deck is exhausted, clicking to the left of the deck turns it over
+so drawing can continue.
+.TP
+.B Suit stacks
+Four stacks in the upper right of the playing area, initially empty.
+Suit stacks are built in ascending order, starting with the Ace.
+An Ace can be moved only to an empty suit stack.
+.TP
+.B Row stacks
+Seven stacks below the deck and suit stacks.
+The number of cards per stack grows from one to seven, left to right;
+the top card of each row stack is face up and the rest are face down.
+Row stacks are built in descending order, alternating red and black
+(light and dark on a monochrome display).
+A King is the only card that can be moved to an empty row stack.
+If a face-down card is uncovered, it can be turned face up.
+.PP
+The game is won when all four suit stacks have been built from Ace to King
+using every card in the deck.
+.SH PLAYING THE GAME
+.SS Moving a card with the mouse
+Drag the card from the deck or a stack to the target location and release
+the mouse button.
+To move multiple cards from a row stack, drag the uppermost card to be
+moved.
+Double-clicking a card in a row stack moves it to a suit stack when the
+move is legal.
+.SS Moving a card with the keyboard
+.IP 1. 4
+Press \fBTab\fR to move to the deck or a stack.
+.IP 2. 4
+Press \fBLeft\fR or \fBRight\fR to select a card, then \fBEnter\fR or
+\fBSpace\fR to pick it up.
+To move more than one card, use \fBUp\fR to extend the selection to the
+uppermost card, then press \fBEnter\fR or \fBSpace\fR.
+.IP 3. 4
+If moving a card from the deck, press \fBTab\fR to jump to the suit or row
+stacks, choose the destination with \fBLeft\fR or \fBRight\fR, and confirm
+with \fBEnter\fR or \fBSpace\fR.
+.SS Undo
+Choose \fBGame\fR \(-> \fBUndo\fR (\fBCtrl+Z\fR) to cancel the last card
+move or the last draw from the deck.
+.SS Turning over cards
+Click a face-down card, or select it with \fBTab\fR plus \fBLeft\fR /
+\fBRight\fR and press \fBEnter\fR or \fBSpace\fR.
+The \fBDraw One\fR option turns over a single card at a time; the
+\fBDraw Three\fR option turns over three.
+.SS Turning over the deck
+Click to the left of the deck, or select that space with the arrow keys
+and press \fBEnter\fR or \fBSpace\fR.
+Under Standard scoring, 20 points are deducted for each pass through the
+deck after three passes in Draw Three mode, or 100 points for each pass
+after one pass in Draw One mode.
+.SS Starting a new game
+Choose \fBGame\fR \(-> \fBDeal\fR (\fBF2\fR).
+.SH KEYBOARD
+.TP
+.B Tab
+Move among the deck, suit stacks, and row stacks.
+Tab selects a stack only when it is applicable to the next move.
+.TP
+.B Left, Right
+Move to the next stack.
+.TP
+.B Up, Down
+Move from card to card within a stack.
+.TP
+.B Enter, Space
+Pick up and release a card or a group of cards.
+Also turns over a card in the deck or a stack, and turns over the deck
+itself.
+.TP
+.B F1
+Open this help.
+.TP
+.B F2
+Start a new game.
+.TP
+.B Ctrl+Z
+Undo the last move.
+.SH CARD DESIGN
+Choose \fBGame\fR \(-> \fBCard Backs\fR and double-click the design you
+want, or select a design with the arrow keys and press \fBEnter\fR.
+Card designs can be changed at any time.
+.SH SCORING
+wxSolitaire offers two scoring systems \(em Standard and Vegas.
+Scoring can also be turned off.
+Changing the scoring option mid-game ends the current game and deals a
+new one.
+.SS Standard scoring
+Points are earned based on time and the moves made.
+A timed game grants a bonus on completion \(em the shorter the game, the
+larger the bonus.
+Timing can be disabled.
+.TP
+.B +10
+Each card moved to a suit stack.
+.TP
+.B +5
+Each card moved from the deck to a row stack.
+.TP
+.B -15
+Each card moved from a suit stack to a row stack.
+.TP
+.B -20
+Each pass through the deck after three passes (Draw Three).
+.TP
+.B -100
+Each pass through the deck after one pass (Draw One).
+.SS Vegas scoring
+The ante is 52 dollars per game.
+The object is to earn back more than the ante.
+No time penalty or bonus is applied.
+If \fBKeep Score\fR is enabled in the Options dialog, a running total is
+kept from game to game.
+.TP
+.B +$5
+Each card moved to a suit stack.
+.PP
+To reset the Vegas score to 52 dollars, switch the scoring option to
+\fBNone\fR or \fBStandard\fR, press \fBEnter\fR, then re-select
+\fBVegas\fR and press \fBEnter\fR again.
+.SH OPTIONS
+Choose \fBGame\fR \(-> \fBOptions\fR to change gameplay settings.
+.SS Draw
+.TP
+.B Draw One
+Turn over the top card of the deck.
+.TP
+.B Draw Three
+Turn over three cards at a time.
+.SS Scoring
+\fBStandard\fR, \fBVegas\fR, or none.
+.SS Display
+.TP
+.B Timed Game
+Track the time elapsed during a game.
+.TP
+.B Status Bar
+Show the status bar with score and time.
+.TP
+.B Keep Score
+Keep a running total across games when using Vegas scoring.
+.TP
+.B Outline Dragging
+Drag an outline of the card and recolour the destination when the move is
+valid, rather than dragging the full bitmap.
+.SH FILES
+.TP
+.I /usr/share/wxSolitaire/wxsolitaire.help
+Help bundle containing the HTML help content.
+.TP
+.I /usr/share/wxSolitaire/wxsolitaire.chm
+Windows compiled HTML Help file (for reference; open with xchm or a
+compatible viewer).
+.TP
+.I /usr/share/applications/wxSolitaire.desktop
+Desktop-entry file.
+.TP
+.I ~/.config/wxSolitaire
+Per-user settings saved between sessions.
+.SH SEE ALSO
+.BR xchm (1)
+.SH AUTHORS
+Andy Vandijck and contributors.
+.SH COPYRIGHT
+wxSolitaire is distributed under the GNU General Public License, version 2.
+See the project LICENSE for details.

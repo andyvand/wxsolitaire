@@ -8,6 +8,10 @@ wxIMPLEMENT_APP(SolApp);
 static void LoadSettings();
 static void SaveSettings();
 
+#if defined(__WXMAC__) || defined(__APPLE__)
+extern "C" bool OpenMacHelpBook(const char* helpBundlePath);
+#endif
+
 /* ================================================================== */
 /*  Options Dialog                                                     */
 /* ================================================================== */
@@ -517,6 +521,7 @@ wxBEGIN_EVENT_TABLE(SolFrame, wxFrame)
     EVT_MENU(SolFrame::ID_OPTIONS, SolFrame::OnOptions)
     EVT_MENU(wxID_EXIT,            SolFrame::OnExit)
     EVT_MENU(wxID_ABOUT,           SolFrame::OnAbout)
+    EVT_MENU(wxID_HELP,            SolFrame::OnHelp)
     EVT_MENU(SolFrame::ID_FORCEWIN,SolFrame::OnNewGame) /* reuse for debug */
     EVT_TIMER(SolFrame::ID_TIMER,  SolFrame::OnTimer)
     EVT_MENU_OPEN(SolFrame::OnMenuOpen)
@@ -557,6 +562,8 @@ SolFrame::SolFrame()
     menuBar->Append(gameMenu, wxT("&Game"));
 
     wxMenu* helpMenu = new wxMenu;
+    helpMenu->Append(wxID_HELP, wxT("Solitaire &Help\tF1"), wxT("View Solitaire help"));
+    helpMenu->AppendSeparator();
     helpMenu->Append(wxID_ABOUT, wxT("&About Solitaire..."), wxT("About this game"));
     menuBar->Append(helpMenu, wxT("&Help"));
 
@@ -699,6 +706,57 @@ void SolFrame::OnAbout(wxCommandEvent& evt)
                  wxT("using wxWidgets for cross-platform compatibility."),
                  wxT("About Solitaire"),
                  wxOK | wxICON_INFORMATION, this);
+}
+
+void SolFrame::OnHelp(wxCommandEvent& evt)
+{
+    const wxString resDir = wxStandardPaths::Get().GetResourcesDir();
+    const wxString exeDir = wxFileName(wxStandardPaths::Get().GetExecutablePath()).GetPath();
+
+#if defined(__WXMAC__) || defined(__APPLE__)
+    /* macOS: register with AppleHelp and open via Help Viewer. */
+    wxFileName bundle(resDir, wxEmptyString);
+    bundle.AppendDir(wxT("wxsolitaire.help"));
+    if (!wxDirExists(bundle.GetPath())) {
+        bundle.AssignDir(exeDir);
+        bundle.AppendDir(wxT("wxsolitaire.help"));
+    }
+    if (wxDirExists(bundle.GetPath())) {
+        if (OpenMacHelpBook(bundle.GetPath().utf8_str())) return;
+        wxLaunchDefaultApplication(bundle.GetPath());
+        return;
+    }
+#elif defined(__WXMSW__) || defined(_WIN32)
+    /* Windows: hand the .chm to the registered viewer (hh.exe). */
+    wxFileName chm(exeDir, wxT("wxsolitaire.chm"));
+    if (!chm.FileExists()) chm.AssignDir(resDir), chm.SetFullName(wxT("wxsolitaire.chm"));
+    if (chm.FileExists()) {
+        wxLaunchDefaultApplication(chm.GetFullPath());
+        return;
+    }
+#else
+    /* Linux / other Unix: open the packaged HTML index in the default browser. */
+    wxFileName html(resDir, wxT("index.html"));
+    html.AppendDir(wxT("wxsolitaire.help"));
+    html.AppendDir(wxT("Contents"));
+    html.AppendDir(wxT("Resources"));
+    html.AppendDir(wxT("English.lproj"));
+    if (!html.FileExists()) {
+        html.AssignDir(exeDir);
+        html.AppendDir(wxT("wxsolitaire.help"));
+        html.AppendDir(wxT("Contents"));
+        html.AppendDir(wxT("Resources"));
+        html.AppendDir(wxT("English.lproj"));
+        html.SetFullName(wxT("index.html"));
+    }
+    if (html.FileExists()) {
+        wxLaunchDefaultBrowser(wxT("file://") + html.GetFullPath());
+        return;
+    }
+#endif
+
+    wxMessageBox(wxT("Help content could not be located."),
+                 wxT("Solitaire Help"), wxOK | wxICON_WARNING, this);
 }
 
 void SolFrame::OnTimer(wxTimerEvent& evt)

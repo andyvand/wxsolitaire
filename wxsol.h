@@ -471,6 +471,7 @@ public:
     void OnOptions(wxCommandEvent& evt);
     void OnExit(wxCommandEvent& evt);
     void OnAbout(wxCommandEvent& evt);
+    void OnHelp(wxCommandEvent& evt);
     void OnTimer(wxTimerEvent& evt);
     void OnMenuOpen(wxMenuEvent& evt);
     void OnClose(wxCloseEvent& evt);

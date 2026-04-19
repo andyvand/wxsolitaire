@@ -1,0 +1,32 @@
+body {
+	font-family: -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
+	color: #000;
+	background: #fff;
+	margin: 1em 1.25em;
+	line-height: 1.4;
+}
+h1 {
+	font-size: 1.3em;
+	margin: 0 0 0.8em 0;
+}
+h2 {
+	font-size: 1.05em;
+	margin: 1.2em 0 0.4em 0;
+}
+p { margin: 0.6em 0; }
+ul, ol { margin: 0.6em 0 0.6em 1.6em; }
+li { margin: 0.25em 0; }
+table {
+	border-collapse: collapse;
+	margin: 0.8em 0;
+}
+th, td {
+	text-align: left;
+	vertical-align: top;
+	padding: 4px 10px 4px 0;
+	border-bottom: 1px solid #e0e0e0;
+}
+th { font-weight: 600; }
+a { color: #0645ad; text-decoration: none; }
+a:hover { text-decoration: underline; }
+img { border: 0; }
