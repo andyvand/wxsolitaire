@@ -18,6 +18,10 @@ A cross-platform implementation of classic Klondike Solitaire built with C++ and
 
 ![](/screenshots/wxsolitaire_linux.png)
 
+- Android:
+
+![](/screenshots/wxsolitaire-andorid.jpg)
+
 ## Features
 
 - Classic Klondike solitaire gameplay
