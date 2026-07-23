@@ -47,6 +47,32 @@ cmake --build .
 
 On macOS this produces a `wxSolitaire.app` bundle. On Windows it builds a GUI executable with the application icon and manifest. On Linux it builds a standard executable.
 
+### Android (arm64-v8a)
+
+The Android build reuses the same C++ game code, compiled against the wxWidgets
+**Qt port (wxQt)** that ships prebuilt inside the Qt 6.9.3 Android kit, and is
+packaged into an APK with `androiddeployqt`.
+
+Prerequisites:
+
+- Qt 6.9.3 Android kit at `/usr/local/qt-6.9.3-android-arm64` (with the wxQt
+  static libraries) and the host Qt at `/usr/local/qt-6.9.3`
+- Android SDK (with a build-tools + platform) and NDK, JDK 17+
+- Host `wxrc-3.3` (used to compile the card resources on the build machine)
+
+Build and package a signed release APK:
+
+```sh
+cp android-signing.env.example android-signing.env   # then fill in your keystore
+./build-android.sh
+```
+
+`build-android.sh` runs `qt-cmake`, builds `libwxSolitaire_arm64-v8a.so`, and
+invokes the Qt `apk` target (which calls `androiddeployqt`). Signing uses your
+existing keystore via the `QT_ANDROID_KEYSTORE_*` variables in
+`android-signing.env`; without them the APK is left unsigned. The resulting APK
+is printed at the end of the run (under `build-android/.../outputs/apk/`).
+
 ## Installing
 
 After building, install with:

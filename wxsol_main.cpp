@@ -1,6 +1,13 @@
 #include "wxsol.h"
 #include "solitaire_icon.h"
 
+#ifdef __ANDROID__
+/* wxQt on Android: reach the underlying Qt objects to force the menu bar to
+   render inline (Android has no desktop-style native menu bar). */
+#include <QMainWindow>
+#include <QMenuBar>
+#endif
+
 /* ---- Implement the wxWidgets application ---- */
 wxIMPLEMENT_APP(SolApp);
 
@@ -569,10 +576,21 @@ SolFrame::SolFrame()
 
     SetMenuBar(menuBar);
 
-    /* --- Compute initial window size --- */
+#ifdef __ANDROID__
+    /* Android has no desktop-style native menu bar. Make sure wxQt's QMenuBar
+       is the QMainWindow's menu bar, is rendered inline (non-native), and is
+       visible so the Game/Help menus appear at the top of the window. */
+    if (QMainWindow* qmw = GetQMainWindow()) {
+        if (QMenuBar* qmb = menuBar->GetQMenuBar()) {
+            qmb->setNativeMenuBar(false);
+            if (qmw->menuBar() != qmb)
+                qmw->setMenuBar(qmb);
+            qmb->setVisible(true);
+        }
+    }
+#endif
+
     xCardMargin = MIN_MARGIN;
-    int initWidth = dxCrd * 7 + 8 * xCardMargin;
-    int initHeight = dyCrd * 4;
 
     /* --- Canvas (main drawing area) --- */
     m_canvas = new SolCanvas(this);
@@ -583,11 +601,22 @@ SolFrame::SolFrame()
         m_statusBar = CreateStatusBar();
     }
 
+#ifdef __ANDROID__
+    /* Phone/tablet: fill the screen. A fixed client size and a wide minimum
+       size would fight the on-screen layout, so only set a small minimum. */
+    SetMinClientSize(wxSize(dxCrd, dyCrd));
+    Maximize(true);
+#else
+    /* --- Compute initial window size --- */
+    int initWidth = dxCrd * 7 + 8 * xCardMargin;
+    int initHeight = dyCrd * 4;
+
     /* --- Set window size and minimum --- */
     int minWidth = dxCrd * 7 + 8 * MIN_MARGIN;
     int minHeight = dyCrd * 3;
     SetMinClientSize(wxSize(minWidth, minHeight));
     SetClientSize(initWidth, initHeight);
+#endif
 
     /* --- Start timer (250ms like original) --- */
     m_timer.Start(250);
@@ -710,6 +739,14 @@ void SolFrame::OnAbout(wxCommandEvent& evt)
 
 void SolFrame::OnHelp(wxCommandEvent& evt)
 {
+#ifdef __ANDROID__
+    /* No packaged help viewer / file:// browser flow on Android. */
+    wxMessageBox(wxT("Solitaire\n\nClassic Klondike solitaire.\n")
+                 wxT("Deal a new game from the Game menu, drag cards between\n")
+                 wxT("columns, and build the four foundations up by suit."),
+                 wxT("Solitaire Help"), wxOK | wxICON_INFORMATION, this);
+    return;
+#else
     const wxString resDir = wxStandardPaths::Get().GetResourcesDir();
     const wxString exeDir = wxFileName(wxStandardPaths::Get().GetExecutablePath()).GetPath();
 
@@ -757,6 +794,7 @@ void SolFrame::OnHelp(wxCommandEvent& evt)
 
     wxMessageBox(wxT("Help content could not be located."),
                  wxT("Solitaire Help"), wxOK | wxICON_WARNING, this);
+#endif /* __ANDROID__ */
 }
 
 void SolFrame::OnTimer(wxTimerEvent& evt)

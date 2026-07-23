@@ -1,18 +1,52 @@
-cmake_minimum_required(VERSION 3.14)
-if(APPLE)
-    project(wxSolitaire LANGUAGES C CXX OBJCXX)
-else()
-    project(wxSolitaire LANGUAGES C CXX)
+cmake_minimum_required(VERSION 3.16)
+project(wxSolitaire LANGUAGES C CXX)
+
+# Objective-C++ is only needed for the macOS help bridge (help_mac.mm). Enable
+# it after project() so the toolchain has resolved the target system: APPLE is
+# true even when cross-compiling for Android from a macOS host, so gate on the
+# resolved CMAKE_SYSTEM_NAME instead.
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    enable_language(OBJCXX)
 endif()
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Find wxWidgets (xrc component needed for embedded card resources)
-find_package(wxWidgets REQUIRED COMPONENTS core base xrc xml html)
+# --- wxWidgets discovery ---------------------------------------------------
+# On Android the game is built on top of the wxWidgets "Qt" port (wxQt) that
+# ships prebuilt (static) inside the Qt Android kit, so we cannot use CMake's
+# find_package(wxWidgets); instead we query that kit's wx-config directly and
+# let Qt6 turn the target into an APK via androiddeployqt.
+if(ANDROID)
+    set(WX_CONFIG_EXECUTABLE "/usr/local/qt-6.9.3-android-arm64/bin/wx-config"
+        CACHE FILEPATH "Path to the Android (wxQt) wx-config")
+    if(NOT EXISTS "${WX_CONFIG_EXECUTABLE}")
+        message(FATAL_ERROR "Android wx-config not found at ${WX_CONFIG_EXECUTABLE}")
+    endif()
 
-if(NOT WIN32)
-    include(${wxWidgets_USE_FILE})
+    execute_process(COMMAND ${WX_CONFIG_EXECUTABLE} --cxxflags
+        OUTPUT_VARIABLE WX_CXXFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE _wx_rc)
+    execute_process(COMMAND ${WX_CONFIG_EXECUTABLE} --libs core,base,xrc,xml,html
+        OUTPUT_VARIABLE WX_LIBS OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(NOT _wx_rc EQUAL 0)
+        message(FATAL_ERROR "Failed to query Android wx-config")
+    endif()
+
+    separate_arguments(WX_CXXFLAGS_LIST UNIX_COMMAND "${WX_CXXFLAGS}")
+    separate_arguments(WX_LIBS_LIST     UNIX_COMMAND "${WX_LIBS}")
+
+    # wxQt is built on QtWidgets/QtGui/QtCore; linking these also lets Qt's
+    # CMake integration generate the Android deployment settings + apk target.
+    # PrintSupport is pulled in by wxQt's print code (QPrinter/QPrinterInfo).
+    find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets PrintSupport)
+else()
+    # Find wxWidgets (xrc component needed for embedded card resources)
+    find_package(wxWidgets REQUIRED COMPONENTS core base xrc xml html)
+
+    if(NOT WIN32)
+        include(${wxWidgets_USE_FILE})
+    endif()
 endif()
 
 # Build bin2c host tool
@@ -21,10 +55,17 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 include(HostCompile)
 host_compile(${CMAKE_CURRENT_SOURCE_DIR}/bin2c.c ${BIN2C})
 
-# Find wxrc tool for XRC compilation
-find_program(WXRC_EXECUTABLE NAMES wxrc wxrc-3.2 wxrc-3.1 wxrc-3.0)
-if(NOT WXRC_EXECUTABLE)
-    message(FATAL_ERROR "wxrc not found - required for XRC resource compilation")
+# Find wxrc tool for XRC compilation.
+# When cross-compiling for Android the wxrc inside the Qt kit is an Android
+# ELF binary that cannot run on the host, so force the host wxrc instead.
+if(ANDROID)
+    set(WXRC_EXECUTABLE "/usr/local/bin/wxrc-3.3"
+        CACHE FILEPATH "Host wxrc used to compile XRC resources")
+else()
+    find_program(WXRC_EXECUTABLE NAMES wxrc wxrc-3.3 wxrc-3.2 wxrc-3.1 wxrc-3.0)
+endif()
+if(NOT WXRC_EXECUTABLE OR NOT EXISTS "${WXRC_EXECUTABLE}")
+    message(FATAL_ERROR "wxrc not found (${WXRC_EXECUTABLE}) - required for XRC resource compilation")
 endif()
 
 # --- Card resource pipeline: XRC -> XRS -> C header ---
@@ -77,7 +118,28 @@ set(HELP_BUNDLE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/wxsolitaire.help)
 set(HELP_CHM_FILE   ${CMAKE_CURRENT_SOURCE_DIR}/wxsolitaire.chm)
 
 # Platform-specific settings
-if(APPLE)
+if(ANDROID)
+    # Build the game as an Android application library (Qt emits
+    # libwxSolitaire_<abi>.so) and let Qt6/androiddeployqt package the APK.
+    qt_add_executable(wxSolitaire ${SOURCES} android_stubs.cpp)
+
+    # wxQt compile flags (include dirs, -D__WXQT__, ...) from wx-config.
+    target_compile_options(wxSolitaire PRIVATE ${WX_CXXFLAGS_LIST})
+
+    # Link order matters: the static wx archives reference Qt symbols, so they
+    # must appear before the Qt libraries on the link line.
+    target_link_libraries(wxSolitaire PRIVATE
+        ${WX_LIBS_LIST}
+        Qt6::Widgets Qt6::Gui Qt6::Core Qt6::PrintSupport)
+
+    set_target_properties(wxSolitaire PROPERTIES
+        QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_SOURCE_DIR}/android
+        QT_ANDROID_TARGET_SDK_VERSION 34
+        QT_ANDROID_MIN_SDK_VERSION    28
+        QT_ANDROID_ABIS               "arm64-v8a"
+        QT_ANDROID_VERSION_NAME       "1.0"
+        QT_ANDROID_VERSION_CODE       1)
+elseif(APPLE)
     # Build as a macOS .app bundle
     set(MACOSX_BUNDLE_BUNDLE_NAME "Solitaire")
     set(MACOSX_BUNDLE_GUI_IDENTIFIER "com.wxsolitaire.app")
@@ -136,4 +198,6 @@ else()
 endif()
 
 target_include_directories(wxSolitaire PRIVATE ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR})
-target_link_libraries(wxSolitaire ${wxWidgets_LIBRARIES})
+if(NOT ANDROID)
+    target_link_libraries(wxSolitaire ${wxWidgets_LIBRARIES})
+endif()
