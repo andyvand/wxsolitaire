@@ -20,7 +20,7 @@ A cross-platform implementation of classic Klondike Solitaire built with C++ and
 
 - Android:
 
-![](/screenshots/wxsolitaire-andorid.jpg)
+![](/screenshots/wxsolitaire-andoroid.jpg)
 
 ## Features
 
