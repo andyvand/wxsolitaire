@@ -1,5 +1,6 @@
 #include "wxsol.h"
 #include "solitaire_icon.h"
+#include "retro68/trace_retro68.h"
 
 #ifdef __ANDROID__
 /* wxQt on Android: reach the underlying Qt objects to force the menu bar to
@@ -17,6 +18,9 @@ static void SaveSettings();
 
 #if defined(__WXMAC__) || defined(__APPLE__)
 extern "C" bool OpenMacHelpBook(const char* helpBundlePath);
+#endif
+#ifdef __WXRETRO68__
+void ShowRetro68Help(wxWindow* parent);     /* retro68/help_retro68.cpp */
 #endif
 
 /* ================================================================== */
@@ -614,8 +618,30 @@ SolFrame::SolFrame()
     /* --- Set window size and minimum --- */
     int minWidth = dxCrd * 7 + 8 * MIN_MARGIN;
     int minHeight = dyCrd * 3;
+#ifdef __WXRETRO68__
+    /* Classic Macs commonly have 512x342, 640x480 or 832x624 screens: keep
+       the window (title bar, menu and status bar included) on the screen,
+       even if that cuts off some of the table on the smallest ones. */
+    {
+        wxRect avail = wxGetClientDisplayRect();
+        wxSize decor = GetSize() - GetClientSize();
+        int maxW = avail.width  - decor.x - 8;
+        int maxH = avail.height - decor.y - 8;
+        if (maxW > 0 && maxH > 0) {
+            initWidth  = wxMin(initWidth,  maxW);
+            initHeight = wxMin(initHeight, maxH);
+            minWidth   = wxMin(minWidth,   maxW);
+            minHeight  = wxMin(minHeight,  maxH);
+        }
+        SetMinClientSize(wxSize(minWidth, minHeight));
+        SetClientSize(initWidth, initHeight);
+        Move(avail.x + (avail.width - GetSize().x) / 2, avail.y + 4);
+    }
+#else
     SetMinClientSize(wxSize(minWidth, minHeight));
     SetClientSize(initWidth, initHeight);
+#endif
+    STRACE("window sized %dx%d", GetClientSize().x, GetClientSize().y);
 #endif
 
     /* --- Start timer (250ms like original) --- */
@@ -746,6 +772,9 @@ void SolFrame::OnHelp(wxCommandEvent& evt)
                  wxT("columns, and build the four foundations up by suit."),
                  wxT("Solitaire Help"), wxOK | wxICON_INFORMATION, this);
     return;
+#elif defined(__WXRETRO68__)
+    /* Classic Mac OS: the embedded HTML help in a wxHtmlWindow. */
+    ShowRetro68Help(this);
 #else
     const wxString resDir = wxStandardPaths::Get().GetResourcesDir();
     const wxString exeDir = wxFileName(wxStandardPaths::Get().GetExecutablePath()).GetPath();
@@ -873,6 +902,10 @@ void SolFrame::UpdateStatusText()
 
 bool SolApp::OnInit()
 {
+#ifdef SOLITAIRE_TRACE
+    SolTraceInit();
+#endif
+    STRACE("OnInit");
     /* Seed random number generator */
     srand((unsigned)time(nullptr));
 
@@ -880,7 +913,9 @@ bool SolApp::OnInit()
     wxInitAllImageHandlers();
 
     /* Initialize card library - get card dimensions */
+    STRACE("image handlers ok");
     if (!cdtInit(&dxCrd, &dyCrd)) {
+        STRACE("cdtInit failed");
         wxMessageBox(wxT("Failed to initialize card bitmaps from embedded resources."),
                      wxT("Solitaire Error"), wxOK | wxICON_ERROR);
         return false;
@@ -906,11 +941,14 @@ bool SolApp::OnInit()
     rgbTable = fBW ? 0x00FFFFFFUL : 0x00008000UL; /* white or green */
 
     /* Load saved settings */
+    STRACE("cards %dx%d, screen %dx%d", dxCrd, dyCrd, dxScreen, dyScreen);
     LoadSettings();
+    STRACE("settings loaded");
 
     /* Create main frame */
     m_frame = new SolFrame();
     g_frame = m_frame;
+    STRACE("main window constructed");
 
     /* Initialize game engine */
     FInitGm();
@@ -922,6 +960,10 @@ bool SolApp::OnInit()
     /* Show the window */
     m_frame->Show(true);
     SetTopWindow(m_frame);
+    STRACE("main window shown");
+#ifdef SOLITAIRE_TRACE
+    SolTraceAlive(m_frame);
+#endif
 
     /* Deal initial game */
     m_frame->NewGame(true, false);

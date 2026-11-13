@@ -12,6 +12,11 @@ endif()
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Classic Mac OS (wxRetro68): 68k (Retro68) or PowerPC (RetroPPC).
+if(CMAKE_SYSTEM_NAME MATCHES "^Retro(68|PPC)$")
+    set(RETRO68 ON)
+endif()
+
 # --- wxWidgets discovery ---------------------------------------------------
 # On Android the game is built on top of the wxWidgets "Qt" port (wxQt) that
 # ships prebuilt (static) inside the Qt Android kit, so we cannot use CMake's
@@ -40,6 +45,21 @@ if(ANDROID)
     # CMake integration generate the Android deployment settings + apk target.
     # PrintSupport is pulled in by wxQt's print code (QPrinter/QPrinterInfo).
     find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets PrintSupport)
+elseif(RETRO68)
+    # wxWidgets from the sysroot's wx-config, never the host's: FindwxWidgets
+    # is unreliable when cross-compiling and would pick up the host's wx.
+    if(NOT wxWidgets_CONFIG_EXECUTABLE)
+        set(wxWidgets_CONFIG_EXECUTABLE ${CMAKE_SYSTEM_PREFIX_PATH}/bin/wx-config)
+    endif()
+    execute_process(COMMAND ${wxWidgets_CONFIG_EXECUTABLE} --cxxflags core base xrc html xml
+        OUTPUT_VARIABLE WX_CXXFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE RESULT_VARIABLE _wxr1)
+    execute_process(COMMAND ${wxWidgets_CONFIG_EXECUTABLE} --libs core base xrc html xml
+        OUTPUT_VARIABLE WX_LIBS OUTPUT_STRIP_TRAILING_WHITESPACE RESULT_VARIABLE _wxr2)
+    if(_wxr1 OR _wxr2)
+        message(FATAL_ERROR "wx-config failed: ${wxWidgets_CONFIG_EXECUTABLE}")
+    endif()
+    separate_arguments(WX_CXXFLAGS_LIST NATIVE_COMMAND "${WX_CXXFLAGS}")
+    separate_arguments(WX_LIBS_LIST NATIVE_COMMAND "${WX_LIBS}")
 else()
     # Find wxWidgets (xrc component needed for embedded card resources)
     find_package(wxWidgets REQUIRED COMPONENTS core base xrc xml html)
@@ -61,6 +81,13 @@ host_compile(${CMAKE_CURRENT_SOURCE_DIR}/bin2c.c ${BIN2C})
 if(ANDROID)
     set(WXRC_EXECUTABLE "/usr/local/bin/wxrc-3.3"
         CACHE FILEPATH "Host wxrc used to compile XRC resources")
+elseif(RETRO68)
+    # The sysroot's wxrc is a classic Mac program; use the host one.
+    find_program(WXRC_EXECUTABLE NAMES wxrc wxrc-3.3 wxrc-3.2
+        PATHS /usr/local/bin /opt/homebrew/bin NO_DEFAULT_PATH)
+    if(NOT WXRC_EXECUTABLE)
+        find_program(WXRC_EXECUTABLE NAMES wxrc wxrc-3.3 wxrc-3.2 NO_CMAKE_SYSTEM_PATH)
+    endif()
 else()
     find_program(WXRC_EXECUTABLE NAMES wxrc wxrc-3.3 wxrc-3.2 wxrc-3.1 wxrc-3.0)
 endif()
@@ -118,7 +145,95 @@ set(HELP_BUNDLE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/wxsolitaire.help)
 set(HELP_CHM_FILE   ${CMAKE_CURRENT_SOURCE_DIR}/wxsolitaire.chm)
 
 # Platform-specific settings
-if(ANDROID)
+if(RETRO68)
+    # =======================================================================
+    #  Classic Mac OS (Retro68): 68k (Retro68) or PowerPC (RetroPPC)
+    #
+    #  Built against wxRetro68 (wxUniversal on QuickDraw) from the Retro68
+    #  sysroot. Produces Solitaire.bin (MacBinary), Solitaire.APPL and
+    #  Solitaire.dsk (an HFS disk image) for the one architecture;
+    #  retro68/build.sh builds both and merges them into a single fat
+    #  application on one disk image.
+    # =======================================================================
+
+    # The HTML help, zipped and embedded, shown in a wxHtmlWindow (classic
+    # Mac OS has no browser to hand it to).
+    set(HELP_SRC_DIR ${HELP_BUNDLE_DIR}/Contents/Resources/en.lproj)
+    file(GLOB HELP_FILES RELATIVE ${HELP_SRC_DIR}
+        ${HELP_SRC_DIR}/*.html ${HELP_SRC_DIR}/*.css
+        ${HELP_SRC_DIR}/html/*.html ${HELP_SRC_DIR}/images/*)
+    list(SORT HELP_FILES)
+    set(HELP_DEPS)
+    foreach(_f ${HELP_FILES})
+        list(APPEND HELP_DEPS ${HELP_SRC_DIR}/${_f})
+    endforeach()
+    set(HELP_ZIP ${CMAKE_BINARY_DIR}/help.zip)
+    add_custom_command(
+        OUTPUT ${HELP_ZIP}
+        COMMAND ${CMAKE_COMMAND} -E tar cf ${HELP_ZIP} --format=zip ${HELP_FILES}
+        WORKING_DIRECTORY ${HELP_SRC_DIR}
+        DEPENDS ${HELP_DEPS}
+        COMMENT "Zipping Solitaire Help (Retro68)"
+    )
+    set(HELP_DATA_H ${CMAKE_BINARY_DIR}/help_data.h)
+    add_custom_command(
+        OUTPUT ${HELP_DATA_H}
+        COMMAND ${BIN2C} ${HELP_ZIP} ${HELP_DATA_H} help_data
+        DEPENDS ${HELP_ZIP} ${BIN2C}
+        COMMENT "Embedding Solitaire Help as C array (Retro68)"
+    )
+
+    add_executable(wxSolitaire ${SOURCES} ${HELP_DATA_H}
+        ${CMAKE_SOURCE_DIR}/retro68/help_retro68.cpp)
+    target_compile_options(wxSolitaire PRIVATE ${WX_CXXFLAGS_LIST}
+        -ffunction-sections -fdata-sections)
+    target_link_options(wxSolitaire PRIVATE -Wl,--gc-sections)
+    target_link_libraries(wxSolitaire PRIVATE
+        -Wl,--start-group ${WX_LIBS_LIST} -Wl,--end-group)
+    # Relink when the wx libraries change (wx-config gives flags, so CMake
+    # does not know about them): the full paths, plus -l names found in the
+    # -L directories.
+    set(WX_LIB_FILES)
+    set(_wx_lib_dirs)
+    foreach(_arg ${WX_LIBS_LIST})
+        if(_arg MATCHES "^-L(.+)$")
+            list(APPEND _wx_lib_dirs "${CMAKE_MATCH_1}")
+        elseif(_arg MATCHES "\\.a$" AND EXISTS "${_arg}")
+            list(APPEND WX_LIB_FILES "${_arg}")
+        elseif(_arg MATCHES "^-l(.+)$")
+            foreach(_dir ${_wx_lib_dirs})
+                if(EXISTS "${_dir}/lib${CMAKE_MATCH_1}.a")
+                    list(APPEND WX_LIB_FILES "${_dir}/lib${CMAKE_MATCH_1}.a")
+                    break()
+                endif()
+            endforeach()
+        endif()
+    endforeach()
+    list(REMOVE_DUPLICATES WX_LIB_FILES)
+    set_property(TARGET wxSolitaire APPEND PROPERTY LINK_DEPENDS ${WX_LIB_FILES})
+
+    # -DSOLITAIRE_TRACE=ON: log startup to "wxtest.log" next to the
+    # application and shut the Mac down once it is up, for unattended
+    # emulator runs (retro68/run-basilisk.sh).
+    option(SOLITAIRE_TRACE "Trace startup to wxtest.log (classic Mac OS testing)" OFF)
+    if(SOLITAIRE_TRACE)
+        target_sources(wxSolitaire PRIVATE ${CMAKE_SOURCE_DIR}/retro68/trace_retro68.cpp)
+        target_compile_definitions(wxSolitaire PRIVATE SOLITAIRE_TRACE=1)
+    endif()
+
+    set(SOLITAIRE_REZ_DEFINES)
+    if(CMAKE_SYSTEM_NAME STREQUAL "RetroPPC")
+        set(SOLITAIRE_REZ_DEFINES SOLITAIRE_PPC=1)
+    endif()
+
+    include(Retro68Application)
+    retro68_application(wxSolitaire
+        NAME "Solitaire"
+        CREATOR WXSL
+        RESOURCES ${CMAKE_SOURCE_DIR}/retro68/wxSolitaire.r
+        REZ_INCLUDES ${CMAKE_SOURCE_DIR}/retro68
+        REZ_DEFINES ${SOLITAIRE_REZ_DEFINES})
+elseif(ANDROID)
     # Build the game as an Android application library (Qt emits
     # libwxSolitaire_<abi>.so) and let Qt6/androiddeployqt package the APK.
     qt_add_executable(wxSolitaire ${SOURCES} android_stubs.cpp)
@@ -198,6 +313,6 @@ else()
 endif()
 
 target_include_directories(wxSolitaire PRIVATE ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR})
-if(NOT ANDROID)
+if(NOT ANDROID AND NOT RETRO68)
     target_link_libraries(wxSolitaire ${wxWidgets_LIBRARIES})
 endif()
