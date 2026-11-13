@@ -14,6 +14,14 @@ A cross-platform implementation of classic Klondike Solitaire built with C++ and
 
 ![](/screenshots/wxsolitaire_macOS.png)
 
+- Mac OS 7.5.X (m68k)
+
+![](/screenshots/wxsolitaire_MacOS_m68k.png)
+
+- Mac OS 9.X (ppc)
+
+![](/screenshots/wxsolitaire_MacOS_ppc.png)
+
 - Linux:
 
 ![](/screenshots/wxsolitaire_linux.png)
